@@ -23,7 +23,7 @@ app = FastAPI()
 main_menu = ReplyKeyboardMarkup(
     keyboard=[
         [KeyboardButton(text="📖 Explicar"), KeyboardButton(text="📊 Interpretar")],
-        [KeyboardButton(text=" Comparar"), KeyboardButton(text="🧠 Mentalidad")],
+        [KeyboardButton(text="🧮 Comparar"), KeyboardButton(text="🧠 Mentalidad")],
         [KeyboardButton(text="❓ Ayuda / Menú")]
     ],
     resize_keyboard=True,
@@ -60,10 +60,10 @@ async def cmd_start(message: Message):
 async def cmd_help(message: Message):
     await message.answer(
         "🎓 *COMANDOS DISPONIBLES*\n\n"
-        "📖 */explicar [concepto]* - Te enseña qué es y cómo funciona.\n"
+        " */explicar [concepto]* - Te enseña qué es y cómo funciona.\n"
         "📊 */interpreta [dato]* - Analiza una estadística o tendencia.\n"
-        " */compara [escenario A] vs [escenario B]* - Calcula el valor matemático.\n"
-        "🧠 */mentalidad [situación]* - Consejos para gestionar emociones y rachas.\n\n"
+        "🧮 */compara [escenario A] vs [escenario B]* - Calcula el valor matemático.\n"
+        " */mentalidad [situación]* - Consejos para gestionar emociones y rachas.\n\n"
         "También puedes tocar los botones del menú inferior.",
         reply_markup=main_menu,
         parse_mode="Markdown"
@@ -77,13 +77,58 @@ async def cmd_ia(message: Message):
         await message.answer("🧠 *Modo Asesor Activado*\n\nEscribe tu pregunta libre.", parse_mode="Markdown")
         return
     
-    await message.answer("🤔 Analizando tu pregunta con IA...")
+    await message.answer(" Analizando tu pregunta con IA...")
     response = ask_ai(question)
     await message.answer(response, parse_mode="Markdown")
 
-# 6. Comando /explicar y botón
-@dp.message(Command("explicar"))
+# 6. Botones del menú (muestran ayuda)
 @dp.message(lambda message: message.text == "📖 Explicar")
+async def btn_explicar(message: Message):
+    await message.answer(
+        " *MODO PROFESOR ACTIVADO*\n\n"
+        "Escribe el concepto que quieres que te explique.\n\n"
+        "Ejemplos:\n"
+        "• `Handicap Asiático -1.5`\n"
+        "• `Varianza y por qué duele`\n"
+        "• `Criterio de Kelly`\n"
+        "• `xG (Goles Esperados)`",
+        parse_mode="Markdown"
+    )
+
+@dp.message(lambda message: message.text == "📊 Interpretar")
+async def btn_interpreta(message: Message):
+    await message.answer(
+        "📊 *MODO TRADUCTOR DE DATOS ACTIVADO*\n\n"
+        "Pégame el dato, estadística o tendencia que quieras que analice.\n\n"
+        "Ejemplos:\n"
+        "• `El equipo A tiene un xG de 2.5 pero solo ha marcado 1.0 en los últimos 5 partidos`\n"
+        "• `El local ha ganado 8 de sus últimos 10 partidos jugando en casa`",
+        parse_mode="Markdown"
+    )
+
+@dp.message(lambda message: message.text == "🧮 Comparar")
+async def btn_compara(message: Message):
+    await message.answer(
+        "🧮 *COMPARADOR DE VALOR (+EV)*\n\n"
+        "Compara dos escenarios de apuesta para ver cuál tiene mejor valor matemático.\n\n"
+        "Ejemplos:\n"
+        "• `1.90 con 60% vs 2.50 con 35%`\n"
+        "• `Cuota 2.00 probabilidad 55% contra Cuota 1.75 probabilidad 65%`",
+        parse_mode="Markdown"
+    )
+
+@dp.message(lambda message: message.text == "🧠 Mentalidad")
+async def btn_mentalidad(message: Message):
+    await message.answer(
+        "🧠 *MODO COACH MENTAL*\n\n"
+        "Este módulo está en construcción. Próximamente te ayudaré a gestionar rachas negativas, el 'tilt' y la disciplina emocional.\n\n"
+        "Mientras tanto, recuerda: *La varianza es parte del juego. Mantén la disciplina y confía en tu proceso +EV.*",
+        reply_markup=main_menu,
+        parse_mode="Markdown"
+    )
+
+# 7. Comandos con texto (procesan la petición)
+@dp.message(Command("explicar"))
 async def cmd_explicar(message: Message):
     question = message.text.replace("/explicar", "").strip()
     if not question:
@@ -104,9 +149,7 @@ async def cmd_explicar(message: Message):
     response = ask_ai(educational_prompt)
     await message.answer(response, parse_mode="Markdown")
 
-# 7. Comando /interpreta y botón
 @dp.message(Command("interpreta"))
-@dp.message(lambda message: message.text == "📊 Interpretar")
 async def cmd_interpreta(message: Message):
     data_input = message.text.replace("/interpreta", "").strip()
     if not data_input:
@@ -133,9 +176,7 @@ async def cmd_interpreta(message: Message):
     response = ask_ai(interpret_prompt)
     await message.answer(response, parse_mode="Markdown")
 
-# 8. Comando /compara y botón
 @dp.message(Command("compara"))
-@dp.message(lambda message: message.text == "🧮 Comparar")
 async def cmd_compara(message: Message):
     comparison_input = message.text.replace("/compara", "").strip()
     if not comparison_input:
@@ -164,12 +205,10 @@ async def cmd_compara(message: Message):
     response = ask_ai(compare_prompt)
     await message.answer(response, parse_mode="Markdown")
 
-# 9. Comando /mentalidad (Placeholder para el futuro)
 @dp.message(Command("mentalidad"))
-@dp.message(lambda message: message.text == "🧠 Mentalidad")
 async def cmd_mentalidad(message: Message):
     await message.answer(
-        " *MODO COACH MENTAL*\n\n"
+        "🧠 *MODO COACH MENTAL*\n\n"
         "Este módulo está en construcción. Próximamente te ayudaré a gestionar rachas negativas, el 'tilt' y la disciplina emocional.\n\n"
         "Mientras tanto, recuerda: *La varianza es parte del juego. Mantén la disciplina y confía en tu proceso +EV.*",
         reply_markup=main_menu,
