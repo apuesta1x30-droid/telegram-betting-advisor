@@ -60,10 +60,10 @@ async def cmd_start(message: Message):
 async def cmd_help(message: Message):
     await message.answer(
         "🎓 *COMANDOS DISPONIBLES*\n\n"
-        " */explicar [concepto]* - Te enseña qué es y cómo funciona.\n"
+        "📖 */explicar [concepto]* - Te enseña qué es y cómo funciona.\n"
         "📊 */interpreta [dato]* - Analiza una estadística o tendencia.\n"
         "🧮 */compara [escenario A] vs [escenario B]* - Calcula el valor matemático.\n"
-        " */mentalidad [situación]* - Consejos para gestionar emociones y rachas.\n\n"
+        "🧠 */mentalidad [situación]* - Consejos para gestionar emociones y rachas.\n\n"
         "También puedes tocar los botones del menú inferior.",
         reply_markup=main_menu,
         parse_mode="Markdown"
@@ -74,10 +74,10 @@ async def cmd_help(message: Message):
 async def cmd_ia(message: Message):
     question = message.text.replace("/ia", "").strip()
     if not question:
-        await message.answer("🧠 *Modo Asesor Activado*\n\nEscribe tu pregunta libre.", parse_mode="Markdown")
+        await message.answer(" *Modo Asesor Activado*\n\nEscribe tu pregunta libre.", parse_mode="Markdown")
         return
     
-    await message.answer(" Analizando tu pregunta con IA...")
+    await message.answer("🤔 Analizando tu pregunta con IA...")
     response = ask_ai(question)
     await message.answer(response, parse_mode="Markdown")
 
@@ -95,7 +95,7 @@ async def btn_explicar(message: Message):
         parse_mode="Markdown"
     )
 
-@dp.message(lambda message: message.text == "📊 Interpretar")
+@dp.message(lambda message: message.text == " Interpretar")
 async def btn_interpreta(message: Message):
     await message.answer(
         "📊 *MODO TRADUCTOR DE DATOS ACTIVADO*\n\n"
@@ -109,7 +109,7 @@ async def btn_interpreta(message: Message):
 @dp.message(lambda message: message.text == "🧮 Comparar")
 async def btn_compara(message: Message):
     await message.answer(
-        "🧮 *COMPARADOR DE VALOR (+EV)*\n\n"
+        " *COMPARADOR DE VALOR (+EV)*\n\n"
         "Compara dos escenarios de apuesta para ver cuál tiene mejor valor matemático.\n\n"
         "Ejemplos:\n"
         "• `1.90 con 60% vs 2.50 con 35%`\n"
@@ -120,9 +120,14 @@ async def btn_compara(message: Message):
 @dp.message(lambda message: message.text == "🧠 Mentalidad")
 async def btn_mentalidad(message: Message):
     await message.answer(
-        "🧠 *MODO COACH MENTAL*\n\n"
-        "Este módulo está en construcción. Próximamente te ayudaré a gestionar rachas negativas, el 'tilt' y la disciplina emocional.\n\n"
-        "Mientras tanto, recuerda: *La varianza es parte del juego. Mantén la disciplina y confía en tu proceso +EV.*",
+        " *MODO COACH MENTAL ACTIVADO*\n\n"
+        "Cuéntame tu situación o elige un tema para analizar tu mentalidad de apostador:\n\n"
+        "Ejemplos:\n"
+        "• `Estoy en racha negativa y quiero recuperar`\n"
+        "• `Siento que voy a hacer tilt`\n"
+        "• `¿Qué es la falacia del jugador?`\n"
+        "• `No consigo seguir mi plan de staking`\n"
+        "• `Acabo de perder un bet a última hora (bad beat)`",
         reply_markup=main_menu,
         parse_mode="Markdown"
     )
@@ -190,7 +195,7 @@ async def cmd_compara(message: Message):
         )
         return
     
-    await message.answer("🧮 Calculando valor esperado de ambos escenarios...")
+    await message.answer(" Calculando valor esperado de ambos escenarios...")
     compare_prompt = f"""Actúa como un profesor experto en matemáticas de apuestas.
     El usuario quiere comparar estos dos escenarios: "{comparison_input}".
     
@@ -207,13 +212,35 @@ async def cmd_compara(message: Message):
 
 @dp.message(Command("mentalidad"))
 async def cmd_mentalidad(message: Message):
-    await message.answer(
-        "🧠 *MODO COACH MENTAL*\n\n"
-        "Este módulo está en construcción. Próximamente te ayudaré a gestionar rachas negativas, el 'tilt' y la disciplina emocional.\n\n"
-        "Mientras tanto, recuerda: *La varianza es parte del juego. Mantén la disciplina y confía en tu proceso +EV.*",
-        reply_markup=main_menu,
-        parse_mode="Markdown"
-    )
+    text = message.text.replace("/mentalidad", "").strip()
+    if not text:
+        await message.answer(
+            "🧠 *MODO COACH MENTAL ACTIVADO*\n\n"
+            "Cuéntame tu situación o elige un tema para analizar tu mentalidad de apostador:\n\n"
+            "Ejemplos:\n"
+            "• `Estoy en racha negativa y quiero recuperar`\n"
+            "• `Siento que voy a hacer tilt`\n"
+            "• `¿Qué es la falacia del jugador?`\n"
+            "• `No consigo seguir mi plan de staking`\n"
+            "• `Acabo de perder un bet a última hora (bad beat)`",
+            reply_markup=main_menu,
+            parse_mode="Markdown"
+        )
+        return
+    
+    await message.answer("🧠 Analizando tu estado mental y preparándote un consejo...")
+    mental_prompt = f"""Actúa como un coach de psicología deportiva especializado en traders y apostadores profesionales.
+    El usuario te presenta la siguiente situación mental o duda: "{text}".
+    
+    Tu tarea:
+    1. Valida sus emociones (es normal sentirse así).
+    2. Explica el sesgo cognitivo o trampa mental en la que puede estar cayendo (ej. falacia del jugador, aversión a la pérdida, tilt).
+    3. Dale un consejo práctico e inmediato para volver a la disciplina y al pensamiento matemático (+EV).
+    4. Recuérdale que el resultado a corto plazo es varianza, pero el proceso a largo plazo es lo que da beneficios.
+    
+    Usa formato Markdown (*negritas*, listas, emojis). Sé empático pero firme. Máximo 15-20 líneas."""
+    response = ask_ai(mental_prompt)
+    await message.answer(response, parse_mode="Markdown")
 
 # Handler genérico para mensajes de texto libre (sin comando)
 @dp.message(lambda message: message.text and not message.text.startswith("/"))
@@ -224,7 +251,7 @@ async def handle_text(message: Message):
     if not user_text:
         return
     
-    await message.answer("🤔 Pensando...")
+    await message.answer(" Pensando...")
     response = ask_ai(user_text)
     await message.answer(response, parse_mode="Markdown")
 
