@@ -165,3 +165,41 @@ async def cmd_explicar(message: Message):
     
     # Respondemos al alumno
     await message.answer(response, parse_mode="Markdown")
+
+# 9. Comando /interpreta (Traductor de Datos)
+@dp.message(Command("interpreta"))
+async def cmd_interpreta(message: Message):
+    # Obtenemos el texto después de "/interpreta"
+    data_input = message.text.replace("/interpreta", "").strip()
+    
+    if not data_input:
+        await message.answer(
+            "📊 *MODO TRADUCTOR DE DATOS ACTIVADO*\n\n"
+            "Pégame el dato, estadística o tendencia que quieras que analice.\n\n"
+            "Ejemplos:\n"
+            "• `/interpreta El equipo A tiene un xG de 2.5 pero solo ha marcado 1.0 en los últimos 5 partidos`\n"
+            "• `/interpreta El local ha ganado 8 de sus últimos 10 partidos jugando en casa`\n"
+            "• `/interpreta La cuota ha bajado de 2.10 a 1.85 en las últimas 2 horas`",
+            parse_mode="Markdown"
+        )
+        return
+    
+    # Avisamos que estamos analizando
+    thinking_msg = await message.answer("🔍 Analizando los datos y buscando el contexto real...")
+    
+    # Prompt específico para interpretación de datos
+    interpret_prompt = f"""Actúa como un analista de datos deportivos experto y profesor. 
+    El usuario te proporciona el siguiente dato o estadística: "{data_input}".
+    
+    Tu tarea:
+    1. Explica qué significa esto *realmente* más allá del número superficial.
+    2. Menciona conceptos clave aplicables (ej: regresión a la media, varianza, tamaño de muestra, contexto táctico, movimiento de mercado).
+    3. Indica qué implicaciones tiene esto de cara al futuro o cómo debería influir en la toma de decisiones.
+    
+    Usa formato Markdown (*negritas*, listas, emojis). Sé claro, pedagógico y conciso (máx. 15-20 líneas)."""
+    
+    # Consultamos a la IA
+    response = ask_ai(interpret_prompt)
+    
+    # Respondemos al alumno
+    await message.answer(response, parse_mode="Markdown")
