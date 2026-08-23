@@ -74,6 +74,7 @@ async def cmd_ia(message: Message):
     
     thinking_msg = await message.answer("🤔 Analizando tu pregunta con IA...")
     response = ask_ai(question)
+       
     await message.answer(response)
 
 # Función que se ejecuta al iniciar la aplicación en Render
