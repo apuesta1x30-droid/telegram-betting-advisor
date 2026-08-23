@@ -7,6 +7,7 @@ from aiogram.filters import Command
 from aiogram.types import Message
 from dotenv import load_dotenv
 from core.agent import ask_ai
+from data.odds_api import get_odds
 
 # Cargar variables de entorno
 load_dotenv()
@@ -86,3 +87,49 @@ async def on_startup():
         logging.info(f"Webhook establecido en: {webhook_url}/webhook")
     else:
         logging.warning("WEBHOOK_URL no configurada correctamente.")
+
+# 6. Comando /cuotas para probar la API
+@dp.message(Command("cuotas"))
+async def cmd_cuotas(message: Message):
+    thinking_msg = await message.answer("📡 Conectando con las casas de apuestas...")
+    
+    # Pedimos cuotas de La Liga (fútbol español)
+    odds_data = get_odds(sport_key="soccer_spain_la_liga")
+    
+    if not odds_data:
+        await message.answer("⚠️ No se pudieron obtener datos. Verifica la API Key o que haya partidos hoy.")
+        return
+        
+    # Formateamos la respuesta para Telegram
+    response = "⚽ *PARTIDOS DE LA LIGA (Cuotas 1X2)*\n\n"
+    
+    # Mostramos solo los primeros 5 partidos para no saturar
+    for match in odds_data[:5]:
+        home_team = match.get("home_team", "Desconocido")
+        away_team = match.get("away_team", "Desconocido")
+        
+        # Buscamos las cuotas en los bookmakers
+        bookmakers = match.get("bookmakers", [])
+        odds_text = "Cuotas no disponibles"
+        
+        if bookmakers:
+            # Tomamos el primer bookmaker que tenga el mercado h2h
+            for bm in bookmakers:
+                if bm.get("key") == "pinnacle":  # Usamos Pinnacle como referencia
+                    markets = bm.get("markets", [])
+                    for m in markets:
+                        if m.get("key") == "h2h":
+                            outcomes = m.get("outcomes", [])
+                            home_odd = next((o["price"] for o in outcomes if o["name"] == home_team), "N/A")
+                            draw_odd = next((o["price"] for o in outcomes if o["name"] == "Draw"), "N/A")
+                            away_odd = next((o["price"] for o in outcomes if o["name"] == away_team), "N/A")
+                            odds_text = f"1: {home_odd} | X: {draw_odd} | 2: {away_odd}"
+                            break
+                if odds_text != "Cuotas no disponibles":
+                    break
+        
+        response += f"🆚 *{home_team} vs {away_team}*\n{odds_text}\n\n"
+    
+    response += "_(Mostrando primeros 5 partidos)_"
+    
+    await message.answer(response, parse_mode="Markdown")
