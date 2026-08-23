@@ -133,3 +133,35 @@ async def cmd_cuotas(message: Message):
     response += "_(Mostrando primeros 5 partidos)_"
     
     await message.answer(response, parse_mode="Markdown")
+
+# 8. Comando /explicar (El Profesor)
+@dp.message(Command("explicar"))
+async def cmd_explicar(message: Message):
+    # Obtenemos el texto después de "/explicar"
+    question = message.text.replace("/explicar", "").strip()
+    
+    if not question:
+        await message.answer(
+            "🎓 *MODO PROFESOR ACTIVADO*\n\n"
+            "Escribe el concepto que quieres que te explique.\n\n"
+            "Ejemplos:\n"
+            "• `/explicar Handicap Asiático -1.5`\n"
+            "• `/explicar Varianza y por qué duele`\n"
+            "• `/explicar Criterio de Kelly`\n"
+            "• `/explicar xG (Goles Esperados)`\n"
+            "• `/explicar CLV (Closing Line Value)`",
+            parse_mode="Markdown"
+        )
+        return
+    
+    # Avisamos que estamos preparando la clase
+    thinking_msg = await message.answer("📚 Preparando tu lección...")
+    
+    # Añadimos contexto educativo al prompt
+    educational_prompt = f"Explícame el concepto de '{question}' como si fuera tu alumno. Usa analogías, ejemplos prácticos y formato visual (negritas, listas, emojis). Termina con una pregunta para verificar que lo entendí."
+    
+    # Consultamos a la IA
+    response = ask_ai(educational_prompt)
+    
+    # Respondemos al alumno
+    await message.answer(response, parse_mode="Markdown")
