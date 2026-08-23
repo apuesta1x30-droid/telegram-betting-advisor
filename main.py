@@ -215,6 +215,19 @@ async def cmd_mentalidad(message: Message):
         parse_mode="Markdown"
     )
 
+# Handler genérico para mensajes de texto libre (sin comando)
+@dp.message(lambda message: message.text and not message.text.startswith("/"))
+async def handle_text(message: Message):
+    # Si el usuario escribe texto libre, lo tratamos como una pregunta para la IA
+    user_text = message.text.strip()
+    
+    if not user_text:
+        return
+    
+    await message.answer("🤔 Pensando...")
+    response = ask_ai(user_text)
+    await message.answer(response, parse_mode="Markdown")
+
 # Función que se ejecuta al iniciar la aplicación en Render
 @app.on_event("startup")
 async def on_startup():
