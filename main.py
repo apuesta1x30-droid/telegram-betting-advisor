@@ -203,3 +203,45 @@ async def cmd_interpreta(message: Message):
     
     # Respondemos al alumno
     await message.answer(response, parse_mode="Markdown")
+
+    # 10. Comando /compara (Comparador de Valor)
+@dp.message(Command("compara"))
+async def cmd_compara(message: Message):
+    # Obtenemos el texto después de "/compara"
+    comparison_input = message.text.replace("/compara", "").strip()
+    
+    if not comparison_input:
+        await message.answer(
+            " *COMPARADOR DE VALOR (+EV)*\n\n"
+            "Compara dos escenarios de apuesta para ver cuál tiene mejor valor matemático.\n\n"
+            "Formato: `/compara [Cuota1] con [Prob1]% vs [Cuota2] con [Prob2]%`\n\n"
+            "Ejemplos:\n"
+            "• `/compara 1.90 con 60% vs 2.50 con 35%`\n"
+            "• `/compara Cuota 2.00 probabilidad 55% contra Cuota 1.75 probabilidad 65%`\n"
+            "• `/compara Apostar al favorito 1.50 (70%) vs al underdog 3.00 (30%)`",
+            parse_mode="Markdown"
+        )
+        return
+    
+    # Avisamos que estamos calculando
+    thinking_msg = await message.answer("🧮 Calculando valor esperado de ambos escenarios...")
+    
+    # Prompt específico para comparación de valor
+    compare_prompt = f"""Actúa como un profesor experto en matemáticas de apuestas.
+    El usuario quiere comparar estos dos escenarios: "{comparison_input}".
+    
+    Tu tarea:
+    1. **Extrae los datos**: Identifica las cuotas y probabilidades de cada escenario.
+    2. **Calcula el EV** de cada uno usando la fórmula: EV = (Probabilidad × (Cuota - 1)) - (1 - Probabilidad)
+    3. **Calcula la probabilidad implícita** de cada cuota: Prob_Implícita = 1 / Cuota
+    4. **Compara**: ¿Cuál tiene mejor EV? ¿Cuál tiene valor positivo (+EV)?
+    5. **Explica pedagógicamente**: Por qué una es mejor que la otra, incluso si la "obvia" no es la mejor matemáticamente.
+    
+    Usa formato Markdown con *negritas*, listas y emojis. Muestra los cálculos de forma clara.
+    Termina con una recomendación clara sobre cuál elegiría un apostador profesional."""
+    
+    # Consultamos a la IA
+    response = ask_ai(compare_prompt)
+    
+    # Respondemos al alumno
+    await message.answer(response, parse_mode="Markdown")
