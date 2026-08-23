@@ -18,7 +18,7 @@ def ask_ai(question: str) -> str:
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": question}
             ],
-            model="llama-3.1-8b-instant",  # Modelo gratuito, rápido y excelente
+            model="llama-3.1-70b-versatile",  # Modelo gratuito, rápido y excelente
             temperature=0.3,         # Baja temperatura para respuestas más precisas y menos "creativas"
             max_tokens=500
         )
