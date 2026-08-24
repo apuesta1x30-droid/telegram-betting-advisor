@@ -26,7 +26,7 @@ def ask_ai(question: str) -> str:
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": question}
             ],
-            model="llama-3.2-11b-vision-preview",  # Modelo gratuito con buenos límites
+            model="groq/compound",
             temperature=0.3,
             max_tokens=600  # Reducido para evitar rate limits
         )
@@ -79,7 +79,7 @@ def analyze_match(match_data, ev_data):
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": prompt}
             ],
-            model="llama-3.2-11b-vision-preview",
+            model="groq/compound",
             temperature=0.3,
             max_tokens=400
         )
