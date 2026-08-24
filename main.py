@@ -95,7 +95,7 @@ async def btn_explicar(message: Message):
         parse_mode="Markdown"
     )
 
-@dp.message(lambda message: message.text == " Interpretar")
+@dp.message(lambda message: message.text == "📊 Interpretar")
 async def btn_interpreta(message: Message):
     await message.answer(
         "📊 *MODO TRADUCTOR DE DATOS ACTIVADO*\n\n"
