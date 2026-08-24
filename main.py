@@ -16,10 +16,20 @@ logging.basicConfig(level=logging.INFO)
 bot = Bot(token=os.getenv("TELEGRAM_BOT_TOKEN"))
 dp = Dispatcher()
 
+# Función segura para enviar mensajes: intenta Markdown, si falla envía texto plano
+async def send_message(message: Message, text: str):
+    try:
+        await message.answer(text, parse_mode="Markdown")
+    except Exception:
+        try:
+            await message.answer(text)
+        except Exception as e:
+            logging.error(f"Error enviando mensaje: {e}")
+
 # Inicializar FastAPI
 app = FastAPI()
 
-# --- DEFINICIÓN DEL MENÚ INTERACTIVO ---
+# --- MENÚ INTERACTIVO ---
 main_menu = ReplyKeyboardMarkup(
     keyboard=[
         [KeyboardButton(text="📖 Explicar"), KeyboardButton(text="📊 Interpretar")],
@@ -36,91 +46,85 @@ main_menu = ReplyKeyboardMarkup(
 async def health_check():
     return JSONResponse(content={"status": "ok", "message": "Bot is alive and running!"})
 
-# 2. Endpoint para recibir mensajes de Telegram (Webhook)
+# 2. Webhook de Telegram
 @app.post("/webhook")
 async def webhook(request: Request):
     update = types.Update.model_validate(await request.json(), context={"bot": bot})
     await dp.feed_update(bot, update)
     return {"ok": True}
 
-# 3. Comando /start del bot (Muestra el menú)
+# 3. /start
 @dp.message(Command("start"))
 async def cmd_start(message: Message):
-    await message.answer(
+    await send_message(message,
         "¡Hola! 👋 Soy tu *Profesor Personal de Apuestas Deportivas*.\n\n"
         "Mi misión es educarte, explicarte conceptos y ayudarte a entender las matemáticas y la psicología detrás de las apuestas.\n\n"
         "Usa el menú de abajo o escribe tus preguntas.",
-        reply_markup=main_menu,
-        parse_mode="Markdown"
     )
+    await message.answer("Elige una opción:", reply_markup=main_menu)
 
-# 4. Comando /ayuda o botón de Ayuda
+# 4. /ayuda
 @dp.message(Command("ayuda"))
 @dp.message(lambda message: message.text == "❓ Ayuda / Menú")
 async def cmd_help(message: Message):
-    await message.answer(
+    await send_message(message,
         "🎓 *COMANDOS DISPONIBLES*\n\n"
         "📖 */explicar [concepto]* - Te enseña qué es y cómo funciona.\n"
         "📊 */interpreta [dato]* - Analiza una estadística o tendencia.\n"
         "🧮 */compara [escenario A] vs [escenario B]* - Calcula el valor matemático.\n"
-        "🧠 */mentalidad [situación]* - Consejos para gestionar emociones y rachas.\n\n"
+        " */mentalidad [situación]* - Consejos para gestionar emociones y rachas.\n\n"
         "También puedes tocar los botones del menú inferior.",
-        reply_markup=main_menu,
-        parse_mode="Markdown"
     )
+    await message.answer("Elige una opción:", reply_markup=main_menu)
 
-# 5. Comando /ia (Pregunta libre)
+# 5. /ia
 @dp.message(Command("ia"))
 async def cmd_ia(message: Message):
     question = message.text.replace("/ia", "").strip()
     if not question:
-        await message.answer(" *Modo Asesor Activado*\n\nEscribe tu pregunta libre.", parse_mode="Markdown")
+        await send_message(message, "🧠 *Modo Asesor Activado*\n\nEscribe tu pregunta libre.")
         return
-    
-    await message.answer("🤔 Analizando tu pregunta con IA...")
+    await send_message(message, "🤔 Analizando tu pregunta con IA...")
     response = ask_ai(question)
-    await message.answer(response, parse_mode="Markdown")
+    await send_message(message, response)
 
-# 6. Botones del menú (muestran ayuda)
+# 6. Botones del menú
 @dp.message(lambda message: message.text == "📖 Explicar")
 async def btn_explicar(message: Message):
-    await message.answer(
-        " *MODO PROFESOR ACTIVADO*\n\n"
+    await send_message(message,
+        "🎓 *MODO PROFESOR ACTIVADO*\n\n"
         "Escribe el concepto que quieres que te explique.\n\n"
         "Ejemplos:\n"
         "• `Handicap Asiático -1.5`\n"
         "• `Varianza y por qué duele`\n"
         "• `Criterio de Kelly`\n"
         "• `xG (Goles Esperados)`",
-        parse_mode="Markdown"
     )
 
 @dp.message(lambda message: message.text == "📊 Interpretar")
 async def btn_interpreta(message: Message):
-    await message.answer(
+    await send_message(message,
         "📊 *MODO TRADUCTOR DE DATOS ACTIVADO*\n\n"
         "Pégame el dato, estadística o tendencia que quieras que analice.\n\n"
         "Ejemplos:\n"
         "• `El equipo A tiene un xG de 2.5 pero solo ha marcado 1.0 en los últimos 5 partidos`\n"
         "• `El local ha ganado 8 de sus últimos 10 partidos jugando en casa`",
-        parse_mode="Markdown"
     )
 
 @dp.message(lambda message: message.text == "🧮 Comparar")
 async def btn_compara(message: Message):
-    await message.answer(
-        " *COMPARADOR DE VALOR (+EV)*\n\n"
+    await send_message(message,
+        "🧮 *COMPARADOR DE VALOR (+EV)*\n\n"
         "Compara dos escenarios de apuesta para ver cuál tiene mejor valor matemático.\n\n"
         "Ejemplos:\n"
         "• `1.90 con 60% vs 2.50 con 35%`\n"
         "• `Cuota 2.00 probabilidad 55% contra Cuota 1.75 probabilidad 65%`",
-        parse_mode="Markdown"
     )
 
-@dp.message(lambda message: message.text == "🧠 Mentalidad")
+@dp.message(lambda message: message.text == " Mentalidad")
 async def btn_mentalidad(message: Message):
-    await message.answer(
-        " *MODO COACH MENTAL ACTIVADO*\n\n"
+    await send_message(message,
+        "🧠 *MODO COACH MENTAL ACTIVADO*\n\n"
         "Cuéntame tu situación o elige un tema para analizar tu mentalidad de apostador:\n\n"
         "Ejemplos:\n"
         "• `Estoy en racha negativa y quiero recuperar`\n"
@@ -128,16 +132,14 @@ async def btn_mentalidad(message: Message):
         "• `¿Qué es la falacia del jugador?`\n"
         "• `No consigo seguir mi plan de staking`\n"
         "• `Acabo de perder un bet a última hora (bad beat)`",
-        reply_markup=main_menu,
-        parse_mode="Markdown"
     )
 
-# 7. Comandos con texto (procesan la petición)
+# 7. Comandos con texto
 @dp.message(Command("explicar"))
 async def cmd_explicar(message: Message):
     question = message.text.replace("/explicar", "").strip()
     if not question:
-        await message.answer(
+        await send_message(message,
             "🎓 *MODO PROFESOR ACTIVADO*\n\n"
             "Escribe el concepto que quieres que te explique.\n\n"
             "Ejemplos:\n"
@@ -145,30 +147,26 @@ async def cmd_explicar(message: Message):
             "• `Varianza y por qué duele`\n"
             "• `Criterio de Kelly`\n"
             "• `xG (Goles Esperados)`",
-            parse_mode="Markdown"
         )
         return
-    
-    await message.answer("📚 Preparando tu lección...")
+    await send_message(message, "📚 Preparando tu lección...")
     educational_prompt = f"Explícame el concepto de '{question}' como si fuera tu alumno. Usa analogías, ejemplos prácticos y formato visual (negritas, listas, emojis). Termina con una pregunta para verificar que lo entendí."
     response = ask_ai(educational_prompt)
-    await message.answer(response, parse_mode="Markdown")
+    await send_message(message, response)
 
 @dp.message(Command("interpreta"))
 async def cmd_interpreta(message: Message):
     data_input = message.text.replace("/interpreta", "").strip()
     if not data_input:
-        await message.answer(
-            "📊 *MODO TRADUCTOR DE DATOS ACTIVADO*\n\n"
+        await send_message(message,
+            " *MODO TRADUCTOR DE DATOS ACTIVADO*\n\n"
             "Pégame el dato, estadística o tendencia que quieras que analice.\n\n"
             "Ejemplos:\n"
             "• `El equipo A tiene un xG de 2.5 pero solo ha marcado 1.0 en los últimos 5 partidos`\n"
             "• `El local ha ganado 8 de sus últimos 10 partidos jugando en casa`",
-            parse_mode="Markdown"
         )
         return
-    
-    await message.answer("🔍 Analizando los datos y buscando el contexto real...")
+    await send_message(message, "🔍 Analizando los datos y buscando el contexto real...")
     interpret_prompt = f"""Actúa como un analista de datos deportivos experto y profesor. 
     El usuario te proporciona el siguiente dato o estadística: "{data_input}".
     
@@ -179,23 +177,21 @@ async def cmd_interpreta(message: Message):
     
     Usa formato Markdown (*negritas*, listas, emojis). Sé claro, pedagógico y conciso."""
     response = ask_ai(interpret_prompt)
-    await message.answer(response, parse_mode="Markdown")
+    await send_message(message, response)
 
 @dp.message(Command("compara"))
 async def cmd_compara(message: Message):
     comparison_input = message.text.replace("/compara", "").strip()
     if not comparison_input:
-        await message.answer(
+        await send_message(message,
             "🧮 *COMPARADOR DE VALOR (+EV)*\n\n"
             "Compara dos escenarios de apuesta para ver cuál tiene mejor valor matemático.\n\n"
             "Ejemplos:\n"
             "• `1.90 con 60% vs 2.50 con 35%`\n"
             "• `Cuota 2.00 probabilidad 55% contra Cuota 1.75 probabilidad 65%`",
-            parse_mode="Markdown"
         )
         return
-    
-    await message.answer(" Calculando valor esperado de ambos escenarios...")
+    await send_message(message, "🧮 Calculando valor esperado de ambos escenarios...")
     compare_prompt = f"""Actúa como un profesor experto en matemáticas de apuestas.
     El usuario quiere comparar estos dos escenarios: "{comparison_input}".
     
@@ -208,14 +204,14 @@ async def cmd_compara(message: Message):
     
     Usa formato Markdown con *negritas*, listas y emojis. Muestra los cálculos de forma clara."""
     response = ask_ai(compare_prompt)
-    await message.answer(response, parse_mode="Markdown")
+    await send_message(message, response)
 
 @dp.message(Command("mentalidad"))
 async def cmd_mentalidad(message: Message):
     text = message.text.replace("/mentalidad", "").strip()
     if not text:
-        await message.answer(
-            "🧠 *MODO COACH MENTAL ACTIVADO*\n\n"
+        await send_message(message,
+            " *MODO COACH MENTAL ACTIVADO*\n\n"
             "Cuéntame tu situación o elige un tema para analizar tu mentalidad de apostador:\n\n"
             "Ejemplos:\n"
             "• `Estoy en racha negativa y quiero recuperar`\n"
@@ -223,12 +219,9 @@ async def cmd_mentalidad(message: Message):
             "• `¿Qué es la falacia del jugador?`\n"
             "• `No consigo seguir mi plan de staking`\n"
             "• `Acabo de perder un bet a última hora (bad beat)`",
-            reply_markup=main_menu,
-            parse_mode="Markdown"
         )
         return
-    
-    await message.answer("🧠 Analizando tu estado mental y preparándote un consejo...")
+    await send_message(message, "🧠 Analizando tu estado mental y preparándote un consejo...")
     mental_prompt = f"""Actúa como un coach de psicología deportiva especializado en traders y apostadores profesionales.
     El usuario te presenta la siguiente situación mental o duda: "{text}".
     
@@ -240,22 +233,19 @@ async def cmd_mentalidad(message: Message):
     
     Usa formato Markdown (*negritas*, listas, emojis). Sé empático pero firme. Máximo 15-20 líneas."""
     response = ask_ai(mental_prompt)
-    await message.answer(response, parse_mode="Markdown")
+    await send_message(message, response)
 
-# Handler genérico para mensajes de texto libre (sin comando)
+# Handler genérico para texto libre
 @dp.message(lambda message: message.text and not message.text.startswith("/"))
 async def handle_text(message: Message):
-    # Si el usuario escribe texto libre, lo tratamos como una pregunta para la IA
     user_text = message.text.strip()
-    
     if not user_text:
         return
-    
-    await message.answer(" Pensando...")
+    await send_message(message, "🤔 Pensando...")
     response = ask_ai(user_text)
-    await message.answer(response, parse_mode="Markdown")
+    await send_message(message, response)
 
-# Función que se ejecuta al iniciar la aplicación en Render
+# Startup
 @app.on_event("startup")
 async def on_startup():
     webhook_url = os.getenv("WEBHOOK_URL")
